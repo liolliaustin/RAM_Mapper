@@ -11,6 +11,9 @@ public:
 	int geometricAverage();
 
 	void areaModel();
+
+	void mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockCount);
+
 };
 
 
