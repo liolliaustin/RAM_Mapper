@@ -64,6 +64,7 @@ public:
 		if(fp2){
 			vector<vector<int> >logicalValues;
 			vector<int> current;
+			int currentBits, maxBits=0, val1, val2, out1, out2;
 			while(fgets(line2, 256, fp2) != NULL){
 
 				if(Count2 >= 2){
@@ -83,6 +84,14 @@ public:
 								else
 									current.push_back(4);
 								break;
+							case 3:
+								current.push_back(atoi(new_value));
+								val1 = atoi(new_value);
+								break;
+							case 4:
+								current.push_back(atoi(new_value));
+								val2 = atoi(new_value);
+								break;
 							default:
 								current.push_back(atoi(new_value));
 								break;
@@ -92,6 +101,14 @@ public:
 						new_value = strtok(NULL, "	");
 						
 					}
+
+					currentBits = val1*val2;
+					if(currentBits > maxBits){
+						maxBits = currentBits;
+						out1 = val1;
+						out2 = val2;
+					}
+
 					
 					logicalValues.push_back(current);
 					current.clear();
@@ -108,6 +125,8 @@ public:
 			// 	}
 			// 	cout << endl;
 			// }
+
+			cout <<"Max Bits = " << maxBits << endl << out1 << " by " << out2 << endl;
 			
 			fclose(fp2);
 			this -> logicalValues = logicalValues;
