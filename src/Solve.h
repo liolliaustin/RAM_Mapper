@@ -15,7 +15,10 @@ public:
 
 	void mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockCount, bool LUTRAM_support, bool MTJ);
 
-	vector<int> RAM8kconfiguration(int depth, int width)
+	int RAM8kconfiguration(int mode, int depth, int width);
+	int RAM128kconfiguration(int mode, int depth, int width);
+
+	int returnLowest(int currentLogic, int RAM8count, int RAM128count, int LUTRAMcount, int mode, int depthExponent, int widthExponent);
 
 };
 

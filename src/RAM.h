@@ -18,10 +18,6 @@ public:
 
 };
 
-class LUTRAM{
-private:
-	int 
-}
 
 
 class RAM_128k{

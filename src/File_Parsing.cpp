@@ -1,4 +1,5 @@
 #include <fstream>
+#include <typeinfo>
 #include <sstream>
 #include <stdio.h>
 #include <string>
@@ -64,33 +65,45 @@ public:
 		if(fp2){
 			vector<vector<int> >logicalValues;
 			vector<int> current;
-			int currentBits, maxBits=0, val1, val2, out1, out2;
+			int currentBits, maxBits=0, tdpCount = 0, ROMCount = 0, SDPcount =0, SinPcount = 0;
 			while(fgets(line2, 256, fp2) != NULL){
 
 				if(Count2 >= 2){
 					char * new_value = strtok(line2, "	");
-					
-					//cout << atoi(new_value) << endl;
+					bool doit = false;
 
 					while (new_value != NULL){
 						switch(Count3){
 							case 2:
-								if(new_value == "SimpleDualPort")
+								if(new_value[0] == 'S' && new_value[2] == 'm'){
 									current.push_back(3);
-								else if(new_value == "ROM")
+								}
+								else if(new_value[0] == 'R'){
 									current.push_back(1);
-								else if(new_value == "SinglePort")
+								}
+								else if(new_value[0] == 'S' && new_value[2] == 'n'){
 									current.push_back(2);
-								else
+								}
+								else{
 									current.push_back(4);
+								}
 								break;
 							case 3:
 								current.push_back(atoi(new_value));
-								val1 = atoi(new_value);
+								if(atoi(new_value) == 8192){
+									doit = true;
+									tdpCount++;
+								}
+								else if(atoi(new_value) >= 4096)
+									SDPcount++;
+								else if(atoi(new_value) >= 2048)
+									ROMCount++;
 								break;
 							case 4:
+								if(doit == true){
+									//cout << atoi(new_value) << endl;
+								}
 								current.push_back(atoi(new_value));
-								val2 = atoi(new_value);
 								break;
 							default:
 								current.push_back(atoi(new_value));
@@ -99,17 +112,12 @@ public:
 						
 						Count3++;
 						new_value = strtok(NULL, "	");
+
 						
 					}
 
-					currentBits = val1*val2;
-					if(currentBits > maxBits){
-						maxBits = currentBits;
-						out1 = val1;
-						out2 = val2;
-					}
 
-					
+					doit = false;
 					logicalValues.push_back(current);
 					current.clear();
 					Count3 = 0;
@@ -126,7 +134,7 @@ public:
 			// 	cout << endl;
 			// }
 
-			cout <<"Max Bits = " << maxBits << endl << out1 << " by " << out2 << endl;
+			//cout << endl <<"SDPcount = " << SDPcount << endl << "TrueDualPortcount = " << tdpCount << endl << "SinPcount = " << SinPcount << endl << "ROMs = " << ROMCount << endl;
 			
 			fclose(fp2);
 			this -> logicalValues = logicalValues;
@@ -149,6 +157,9 @@ int main(int argc, char * argv[]) {
 	
 	Utils * ut = new Utils();
 	ut->get_configuration(argv[1], argv[2]);
+
+	Solve set;
+	set.mapCircuit(ut->getLogicalValues(), ut->getLBCount(), false, false);
 	
 	//cout << argv[1] << " " << argv[2];
 
