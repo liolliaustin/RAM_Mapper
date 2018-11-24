@@ -82,12 +82,14 @@ void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockC
 	cout << "128k: " << chose128 << endl << "8k: " << chose8 << endl << "LUTRAM: " << choseLUT << endl;
 }
 
-int Solve::returnLowest(int currentLogic, int RAM8count, int RAM128count, int LUTRAMcount, int mode, int depthExponent, int widthExponent){
-	int hit128, hit8, hitLUT;
+int Solve::returnLowest(int currentLogic, int RAM8used, int RAM128used, int LUTRAMused, int mode, int depthExponent, int widthExponent){
+	vector<int> hit128, hit8, hitLUT;
 	bool checkLUT = true, RAM128free = false, RAM8free, false, LUTRAMfree = false;
 
+	hitLUT = LUTRAMconfiguration(mode, depthExponent, widthExponent);
 	hit8 = RAM8kconfiguration(mode, depthExponent, widthExponent);
 	hit128 = RAM128kconfiguration(mode, depthExponent, widthExponent);
+
 
 
 	if(RAM128count < currentLogic/300)
@@ -103,42 +105,103 @@ int Solve::returnLowest(int currentLogic, int RAM8count, int RAM128count, int LU
 }
 
 //worry about tdp
-int Solve::RAM8kconfiguration(int mode, int depthExponent, int widthExponent){
-	int hit = 0, widthSize;
-	if(depthExponent + widthExponent <= 13 && depthExponent >= 8){
+vector<int> Solve::RAM8kconfiguration(int mode, int depthExponent, int widthExponent){
+	vector<int> solveData;
+	int hit = 0, widthSize=0, extraLogic=0;
+	if(depthExponent + widthExponent <= 13 && widthExponent <= 5 && mode < 4 || depthExponent + widthExponent <= 13 && widthExponent <= 4 && mode == 4){
 		hit = 1;
 	}
-	else if(depthExponent <= 13 && depthExponent >= 8){
+	else if(depthExponent <= 13 && depthExponent >= 8 && mode < 4 || depthExponent <= 13 && depthExponent >= 9 && mode == 4){
 		hit = widthExponent - (13-depthExponent);
 	}
 	else if(depthExponent < 8){
-		hit = widthExponent - 5;
+		if(mode < 4)
+			hit = widthExponent - 5;
+		else
+			hit = widthExponent - 4;
 	}
 	else if(depthExponent > 13){
-		if(widthExponent <= 5){
+		if(widthExponent <= 5 && mode < 4 || widthExponent<=4 && mode == 4){
 			hit = depthExponent - (13 - widthExponent);
+			//decoders
+			if(hit == 2)
+				extraLogic += 1;
+			else
+				extraLogic += hit;
+
+			//multiplexers
+			if(hit <=4)
+				extraLogic += 1;
+			else if(hit <= 8)
+				extraLogic += 3;
+			else if(hit <=16)
+				extraLogic += 5;
+			else
+				extraLogic = 99;
 		}
 		else{
-			
+			//not mappable
+			hit = 99;
 		}
+
 	}
 
-	return hit;
+	solveData.push_back(hit); 
+	solveData.push_back(extraLogic);
+
+	return solveData;
 }
 
-int Solve::RAM128kconfiguration(int mode, int depthExponent, int widthExponent){
-	int hit = 0, widthSize;
-	if(depthExponent + widthExponent <= 17 && depthExponent >= 10){
+vector<int> Solve::RAM128kconfiguration(int mode, int depthExponent, int widthExponent){
+	vector<int> solveData;
+	int hit = 0, widthSize=0, extraLogic=0;
+	if(depthExponent + widthExponent <= 17 && widthExponent <= 7 && mode < 4 || depthExponent + widthExponent <= 17 && widthExponent <= 6 && mode == 4){
 		hit = 1;
 	}
-	else if(depthExponent <= 17 && depthExponent >= 10){
+	else if(depthExponent <= 17 && depthExponent >= 10 && mode < 4 || depthExponent <= 17 && depthExponent >= 11 && mode == 4){
 		hit = widthExponent - (17-depthExponent);
 	}
 	else if(depthExponent < 10){
-		hit = widthExponent - 7;
+		if(mode < 4)
+			hit = widthExponent - 7;
+		else
+			hit = widthExponent - 6;
 	}
 
-	return hit;
+	else if(depthExponent > 17){
+		if(widthExponent <= 7 && mode < 4 || widthExponent<=6 && mode == 4){
+			hit = depthExponent - (17 - widthExponent);
+			//decoders
+			if(hit == 2)
+				extraLogic += 1;
+			else
+				extraLogic += hit;
+
+			//multiplexers
+			if(hit <=4)
+				extraLogic += 1;
+			else if(hit <= 8)
+				extraLogic += 3;
+			else if(hit <=16)
+				extraLogic += 5;
+			else
+				extraLogic = 99;
+		}
+		else{
+			//not mappable
+			hit = 99;
+		}
+
+	}
+
+	solveData.push_back(hit); 
+	solveData.push_back(extraLogic);
+
+	return solveData;
+}
+
+vector<int> LUTRAMconfiguration(int mode, int depthExponent, int widthExponent){
+
 }
 
 	// vector<int> RAMdata;
