@@ -11,7 +11,7 @@ void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockC
 	float logic_block_area, RAM_area;
 	int bits = 0, max_width = 0;
 	int circuit = circuitDefs[0][0], logic = logicBlockCount[0], RAM_ID, Mode, Depth, Width, newlogic = 0, RAM8count=0, RAM8used=0, RAM128count=0, RAM128used=0, LUTRAMcount = 0, LUTRAMused = 0;
-	int chose128 = 0, chose8 = 0, choseLUT = 0;
+	int chose128 = 0, chose8 = 0, choseLUT = 0, count=0;
 	
 	for(int i=0; i<circuitDefs.size(); i++){
 
@@ -26,9 +26,9 @@ void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockC
 			LUTRAMused = 0;
 			circuit = circuitDefs[i][0];
 			logic = logicBlockCount[circuit];
-			break;
+			
 		}
-
+		count++;
 		RAM_ID = circuitDefs[i][1];
 		Mode = circuitDefs[i][2];
 		Depth = circuitDefs[i][3];
@@ -38,69 +38,124 @@ void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockC
 		int depthExponent = ceil(log2(Depth));
 		int multiplier = widthExponent + depthExponent;
 		vector<int> resultVector;
-		
-		if(multiplier >= 17){
-			RAM128used++;
-			RAM128count = newlogic/300;
-			if(RAM128used > RAM128count){
-				newlogic = RAM128used*300;
-				RAM128count = newlogic/300;
-			}
-			cout << depthExponent << " " << widthExponent << " " << Mode << endl;
-			chose128++;
-			// resultVector = RAM128kconfiguration(mode, depthExponent, widthExponent);
-		}
-		else if(depthExponent >= 8){
-			RAM8used++;
-			RAM8count = newlogic/10;
-			if(RAM8used > RAM8count){
-				newlogic += (RAM8used - RAM8count)*10;
-				RAM8count = newlogic/10;
-			}
+
+		resultVector = returnLowest(newlogic, RAM8used, RAM128used, LUTRAMused, Mode, depthExponent, widthExponent);
+		// cout << i << ": " ;
+		// for(int k=0; k<resultVector.size(); k++)
+		// 	cout << resultVector[k] << " ";
+		// cout << endl;
+
+		if(resultVector[0] == 1){
+			RAM8used = resultVector[1];
+			newlogic = resultVector[2];
 			chose8++;
-			cout << depthExponent << " " << widthExponent << " " << Mode << endl;
-			//resultVector = RAM8kconfiguration(Mode, depthExponent, widthExponent);
-			for(int j=0; j<resultVector.size(); j++)
-				cout << resultVector[j] <<" ";
-			//cout << endl;
 		}
-		else{
-			LUTRAMused++;
-			LUTRAMcount = newlogic/2;
-			if(LUTRAMused > LUTRAMcount){
-				newlogic += (LUTRAMused - LUTRAMcount)*2;
-				LUTRAMcount = newlogic/2;
-			}
+		else if(resultVector[0] == 2){
+			RAM128used = resultVector[1];
+			newlogic = resultVector[2];
+			chose128++;
+		}
+		else if(resultVector[0] == 0){
+			LUTRAMused = resultVector[1];
+			newlogic = resultVector[2];
 			choseLUT++;
-			// resultVector =fdb LUTRAMconfiguration(mode, depthExponent, widthExponent);
-			// LUTRAMcount++;
 		}
+		resultVector.clear();
+		// cout << newlogic << endl;
+		// if(multiplier >= 17){
+		// 	RAM128used++;
+		// 	RAM128count = newlogic/300;
+		// 	if(RAM128used > RAM128count){
+		// 		newlogic = RAM128used*300;
+		// 		RAM128count = newlogic/300;
+		// 	}
+		// 	cout << depthExponent << " " << widthExponent << " " << Mode << endl;
+		// 	chose128++;
+		// 	// resultVector = RAM128kconfiguration(mode, depthExponent, widthExponent);
+		// }
+		// else if(depthExponent >= 8){
+		// 	RAM8used++;
+		// 	RAM8count = newlogic/10;
+		// 	if(RAM8used > RAM8count){
+		// 		newlogic += (RAM8used - RAM8count)*10;
+		// 		RAM8count = newlogic/10;
+		// 	}
+		// 	chose8++;
+		// 	cout << depthExponent << " " << widthExponent << " " << Mode << endl;
+		// 	//resultVector = RAM8kconfiguration(Mode, depthExponent, widthExponent);
+		// 	for(int j=0; j<resultVector.size(); j++)
+		// 		cout << resultVector[j] <<" ";
+		// 	//cout << endl;
+		// }
+		// else{
+		// 	LUTRAMused++;
+		// 	LUTRAMcount = newlogic/2;
+		// 	if(LUTRAMused > LUTRAMcount){
+		// 		newlogic += (LUTRAMused - LUTRAMcount)*2;
+		// 		LUTRAMcount = newlogic/2;
+		// 	}
+		// 	choseLUT++;
+		// 	// resultVector =fdb LUTRAMconfiguration(mode, depthExponent, widthExponent);
+		// 	// LUTRAMcount++;
+		// }
 
 
 
 	}
-	cout << "128k: " << chose128 << endl << "8k: " << chose8 << endl << "LUTRAM: " << choseLUT << endl;
+	cout << "128k: " << chose128 << endl << "8k: " << chose8 << endl << "LUTRAM: " << choseLUT << endl << "Total: " << count << endl;
 }
 
-int Solve::returnLowest(int currentLogic, int RAM8used, int RAM128used, int LUTRAMused, int mode, int depthExponent, int widthExponent){
-	vector<int> hit128, hit8, hitLUT;
-	bool checkLUT = true, RAM128free = false, RAM8free, false, LUTRAMfree = false;
+vector<int> Solve::returnLowest(int currentLogic, int RAM8used, int RAM128used, int LUTRAMused, int mode, int depthExponent, int widthExponent){
+	vector<int> hit128, hit8, hitLUT, final;
+	int minimum;
+	bool checkLUT = true, RAM128free = false, RAM8free=false, LUTRAMfree = false;
 
-	hitLUT = LUTRAMconfiguration(mode, depthExponent, widthExponent);
 	hit8 = RAM8kconfiguration(mode, depthExponent, widthExponent);
 	hit128 = RAM128kconfiguration(mode, depthExponent, widthExponent);
+	if(mode != 4){
+		hitLUT = LUTRAMconfiguration(mode, depthExponent, widthExponent);
+		minimum = min(min(hit8[1], hit128[1]), hitLUT[1]);
+	}
+	else
+		minimum = min(hit8[1], hit128[1]);
 
+	
+	if(RAM8used + hit8[0] <= currentLogic/10 && minimum == hit8[1]){
+		final.push_back(1);
+		final.push_back(RAM8used + hit8[0]);
+		final.push_back(currentLogic + ceil(minimum/10));
+	}
 
+	else if(RAM128used + hit128[0] <= currentLogic/300 && minimum == hit128[1]){
+		final.push_back(2);
+		final.push_back(RAM128used + hit128[0]);
+		final.push_back(currentLogic + ceil(minimum/10));
+	}
+	else if(LUTRAMused + hitLUT[0] <= currentLogic/2 && mode != 4 && minimum == hitLUT[1]){
+		final.push_back(0);
+		final.push_back(LUTRAMused + hitLUT[0]);
+		final.push_back(currentLogic + ceil(minimum/10));
+	}
+	else if(minimum == hit8[1]){
+		final.push_back(1);
+		final.push_back(RAM8used + hit8[0]);
+		final.push_back(currentLogic + 10 + ceil(minimum/10));
+	}
+	else if(minimum == hit128[1]){
+		final.push_back(2);
+		final.push_back(RAM128used + hit128[0]);
+		final.push_back(currentLogic + 300 + ceil(minimum/10));
+	}
+	else if (mode != 4 && minimum == hitLUT[1]){
+		final.push_back(0);
+		final.push_back(LUTRAMused + hitLUT[0]);
+		final.push_back(currentLogic + 2 + ceil(minimum/10));
+	}
+	
 
-	if(RAM128count < currentLogic/300)
-		RAM128free = true;
-	if(RAM8count < currentLogic/10)
-		RAM8free = true;
-	if(LUTRAMcount < currentLogic/2)
-		LUTRAMfree = true;
+	hit128.clear(); hit8.clear(); hitLUT.clear();
 
-	if(mode == 4)
-		checkLUT = false;
+	return final;
 
 }
 
@@ -121,28 +176,31 @@ vector<int> Solve::RAM8kconfiguration(int mode, int depthExponent, int widthExpo
 			hit = widthExponent - 4;
 	}
 	else if(depthExponent > 13){
-		if(widthExponent <= 5 && mode < 4 || widthExponent<=4 && mode == 4){
+		if(widthExponent <= 5 && mode < 4 || widthExponent<=4 && mode == 4)
 			hit = depthExponent - (13 - widthExponent);
-			//decoders
-			if(hit == 2)
-				extraLogic += 1;
-			else
-				extraLogic += hit;
-
-			//multiplexers
-			if(hit <=4)
-				extraLogic += 1;
-			else if(hit <= 8)
-				extraLogic += 3;
-			else if(hit <=16)
-				extraLogic += 5;
-			else
-				extraLogic = 99;
-		}
-		else{
-			//not mappable
+			
+		else if(widthExponent > 5 && mode < 4)
+			hit = (depthExponent - 8)*(widthExponent - 5);
+		
+		else if(widthExponent > 4 && mode == 4)
+			hit = (depthExponent - 9)*(widthExponent - 4);
+		else
 			hit = 99;
-		}
+
+		if(hit == 2)
+			extraLogic += 1;
+		else
+			extraLogic += hit;
+
+		//multiplexers
+		if(hit <=4)
+			extraLogic += 1*pow(2,widthExponent);
+		else if(hit <= 8)
+			extraLogic += 3*pow(2,widthExponent);
+		else if(hit <=16)
+			extraLogic += 5*pow(2,widthExponent);
+		else
+			extraLogic += 99*pow(2,widthExponent);
 
 	}
 
@@ -169,28 +227,32 @@ vector<int> Solve::RAM128kconfiguration(int mode, int depthExponent, int widthEx
 	}
 
 	else if(depthExponent > 17){
-		if(widthExponent <= 7 && mode < 4 || widthExponent<=6 && mode == 4){
+		if(widthExponent <= 7 && mode < 4 || widthExponent<=6 && mode == 4)
 			hit = depthExponent - (17 - widthExponent);
-			//decoders
-			if(hit == 2)
-				extraLogic += 1;
-			else
-				extraLogic += hit;
 
-			//multiplexers
-			if(hit <=4)
-				extraLogic += 1;
-			else if(hit <= 8)
-				extraLogic += 3;
-			else if(hit <=16)
-				extraLogic += 5;
-			else
-				extraLogic = 99;
-		}
-		else{
-			//not mappable
+		else if(widthExponent > 7 && mode < 4)
+			hit = (depthExponent - 10)*(widthExponent - 7);
+		
+		else if(widthExponent > 6 && mode == 4)
+			hit = (depthExponent - 11)*(widthExponent - 6);
+		else
 			hit = 99;
-		}
+		
+		//decoders
+		if(hit == 2)
+			extraLogic += 1;
+		else
+			extraLogic += hit;
+
+		//multiplexers
+		if(hit <=4)
+			extraLogic += 1*pow(2,widthExponent);
+		else if(hit <= 8)
+			extraLogic += 3*pow(2,widthExponent);
+		else if(hit <=16)
+			extraLogic += 5*pow(2,widthExponent);
+		else
+			extraLogic = 99*pow(2,widthExponent);
 
 	}
 
@@ -200,8 +262,36 @@ vector<int> Solve::RAM128kconfiguration(int mode, int depthExponent, int widthEx
 	return solveData;
 }
 
-vector<int> LUTRAMconfiguration(int mode, int depthExponent, int widthExponent){
+vector<int> Solve::LUTRAMconfiguration(int mode, int depthExponent, int widthExponent){
+	vector<int> solveData;
+	int hit=0, extraLogic =0;
+	if(depthExponent <= 5)
+		hit = ceil(pow(2,widthExponent)/20);
+	else if(depthExponent == 6)
+		hit = ceil(pow(2,widthExponent)/10);
+	else{
+		hit = (depthExponent - 6)*ceil(pow(2,widthExponent)/10);
 
+		if(hit == 2)
+			extraLogic += 1;
+		else
+			extraLogic += hit;
+
+		//multiplexers
+		if(hit <=4)
+			extraLogic += 1*pow(2,widthExponent);
+		else if(hit <= 8)
+			extraLogic += 3*pow(2,widthExponent);
+		else if(hit <=16)
+			extraLogic += 5*pow(2,widthExponent);
+		else
+			extraLogic = 99*pow(2,widthExponent); 
+	}
+
+	solveData.push_back(hit); 
+	solveData.push_back(extraLogic);
+
+	return solveData;
 }
 
 	// vector<int> RAMdata;

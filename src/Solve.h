@@ -19,7 +19,7 @@ public:
 	vector<int> RAM128kconfiguration(int mode, int depth, int width);
 	vector<int> LUTRAMconfiguration(int mode, int depth, int width);
 
-	int returnLowest(int currentLogic, int RAM8used, int RAM128used, int LUTRAMused, int mode, int depthExponent, int widthExponent);
+	vector<int> returnLowest(int currentLogic, int RAM8used, int RAM128used, int LUTRAMused, int mode, int depthExponent, int widthExponent);
 
 };
 
