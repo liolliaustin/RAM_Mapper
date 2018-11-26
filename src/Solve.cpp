@@ -8,7 +8,8 @@ using namespace std;
 
 
 void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockCount, bool LUTRAM_support, bool MTJ){
-	float logic_block_area, RAM_area;
+	float logic_block_area, RAM_area, totalArea, areaSum;
+	vector<float> areaVector;
 	int bits = 0, max_width = 0;
 	int circuit = circuitDefs[0][0], logic = logicBlockCount[0], RAM_ID, Mode, Depth, Width, newlogic = 0, RAM8count=0, RAM8used=0, RAM128count=0, RAM128used=0, LUTRAMcount = 0, LUTRAMused = 0;
 	int chose128 = 0, chose8 = 0, choseLUT = 0, count=0;
@@ -16,7 +17,10 @@ void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockC
 	for(int i=0; i<circuitDefs.size(); i++){
 
 		if(circuit != circuitDefs[i][0]){
-			cout << "Circuit " << circuit << " original size: " << logic << endl << "New logic: " << newlogic << endl << "128k: " << RAM128used << endl << "8k: " << RAM8used << endl << "LUTRAM: " << LUTRAMused << endl << endl;
+			totalArea = getArea(circuit, logic, newlogic, RAM128used, RAM8used, LUTRAMused);
+			areaVector.push_back(totalArea/100000000);
+			cout << "Circuit " << circuit << " original size: " << logic << endl << "New logic: " << newlogic << endl << "128k: " << RAM128used << endl << "8k: " << RAM8used << endl << "LUTRAM: " << LUTRAMused <<  endl;
+			cout << "Total Area: " << totalArea << endl << endl;
 			newlogic = 0; 
 			RAM8count=0; 
 			RAM8used=0; 
@@ -45,12 +49,12 @@ void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockC
 		// cout << "widthExponent: " << widthExponent << endl;
 		// cout << "Mode: " << Mode <<endl;
 		// cout << "128k: " << chose128 << endl << "8k: " << chose8 << endl << "LUTRAM: " << choseLUT << endl;
-		if(circuit == 68){
-			for(int j=0; j<resultVector.size(); j++){
-				cout << resultVector[j] << " ";
-			}
-			cout << endl;
-		}
+		// if(circuit == 68){
+		// 	for(int j=0; j<resultVector.size(); j++){
+		// 		cout << resultVector[j] << " ";
+		// 	}
+		// 	cout << endl;
+		// }
 		
 
 		if(resultVector[0] == 1){
@@ -73,7 +77,17 @@ void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockC
 		resultVector.clear();
 
 		if(i == circuitDefs.size()-1){
+			totalArea = getArea(circuit, logic, newlogic, RAM128used, RAM8used, LUTRAMused);
+			areaVector.push_back(totalArea/100000000);
 			cout << "Circuit " << circuit << " original size: " << logic << endl << "New logic: " << newlogic << endl << "128k: " << RAM128used << endl << "8k: " << RAM8used << endl << "LUTRAM: " << LUTRAMused << endl << endl;
+			cout << "Total Area: " << totalArea << endl << endl;
+
+			for(int j=0; j<areaVector.size(); j++){
+				areaSum += areaVector[j];
+			}
+			areaSum /= areaVector.size();
+			areaSum *= 100000000;
+			cout << "Final Area: " << areaSum << endl;
 		}
 
 		
@@ -84,58 +98,48 @@ void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockC
 vector<int> Solve::returnLowest(int currentLogic, int RAM8used, int RAM128used, int LUTRAMused, int mode, int depthExponent, int widthExponent, int Width){
 	vector<int> hit128, hit8, hitLUT, final;
 	int minimum, LUTcost = 999999999, RAM8cost, RAM128cost, RAM8add = 0, RAM128add = 0, LUTRAMadd = 0;
-	float value = 21/10;
-	float RAM8available = float(currentLogic)/10.0 - RAM8used;
-	float RAM128available = float(currentLogic)/300.0 - RAM128used;
+	float RAM8available = floor(float(currentLogic)/10.0) - RAM8used;
+	float RAM128available = floor(float(currentLogic)/300.0) - RAM128used;
 	float LUTRAMavailable = float(currentLogic)/2.0 - LUTRAMused;
-
 
 	hit8 = RAM8kconfiguration(mode, depthExponent, widthExponent, Width);
 	hit128 = RAM128kconfiguration(mode, depthExponent, widthExponent, Width);
 	if(mode != 4){
 		hitLUT = LUTRAMconfiguration(mode, depthExponent, widthExponent, Width);
-		if(LUTRAMavailable <=0){
-			LUTcost = 2*hitLUT[0] + hitLUT[1];
-			LUTRAMadd = 2*hitLUT[0];
-		}
-		else if(LUTRAMavailable > LUTRAMused + hitLUT[0]){
+
+		if(LUTRAMavailable >= hitLUT[0]){
 			LUTcost = hitLUT[1];
 		}
 		else{
-			LUTcost = 2*(hitLUT[0] + LUTRAMused - LUTRAMavailable) + hitLUT[1];
-			LUTRAMadd = 2*(hitLUT[0] + LUTRAMused - LUTRAMavailable);
+			LUTRAMadd = 2*(hitLUT[0] - LUTRAMavailable);
+			LUTcost = LUTRAMadd + hitLUT[1];
 		}
-		//minimum = min(min(hit8[1], hit128[1]), hitLUT[1]);
 	}
-	// else
-	// 	minimum = min(hit8[1], hit128[1]);
-	if(RAM8available <= 0){
-		RAM8add = 10*(RAM8used + hit8[0]) - currentLogic;
-		RAM8cost = 10*hit8[0] + hit8[1];
-	}
-	else if(RAM8available > RAM8used + hit8[0]){
+	if(RAM8available >= hit8[0]){
 		RAM8cost = hit8[1];
 	}
 	else{
-		RAM8add = 10*((RAM8used + hit8[0]) - RAM8available) - currentLogic;
-		RAM8cost = 10*(RAM8available - (RAM8used + hit8[0])) + hit8[1];
+		RAM8add = 10*(hit8[0] - RAM8available);
+		RAM8cost = RAM8add + hit8[1];
 	}
-	if(RAM128available <=0){
-		RAM128cost = 300*hit128[0] + hit128[1];
-		RAM128add = 300*(RAM128used + hit128[0]) - currentLogic;
-	}
-	else if(RAM128available > RAM128used + hit128[0]){
+	if(RAM128available >= hit128[0]){
 		RAM128cost = hit128[1];
 	}
 	else{
-		RAM128add = 300*((RAM128used + hit128[0]) - RAM128available) - currentLogic;
-		RAM128cost = 300*(RAM128used + hit128[0] - RAM128available) + hit128[1];
+		RAM128add = 300*(hit128[0] - RAM128available);
+		RAM128cost = RAM128add + hit128[1];
 	}
 
 	minimum = min(min(RAM8cost, RAM128cost), LUTcost);
 	//cout << "Available128: " << RAM128available << endl << RAM128cost << endl;
+	if(mode != 4 && minimum == LUTcost){
+		//cout << "currentLogic: " << currentLogic + ceil(hitLUT[1]/10) + LUTRAMadd << endl << "LUTcost: " << LUTcost << endl << "LUTRAMused: " << LUTRAMused + hitLUT[0] << endl << "hitLUT: " << hitLUT[0] << endl << endl;
+		final.push_back(0);
+		final.push_back(LUTRAMused + hitLUT[0]);
+		final.push_back(currentLogic + ceil(float(hitLUT[1])/10.0) + LUTRAMadd);
+	}
 
-	if(minimum == RAM8cost){
+	else if(minimum == RAM8cost){
 		//cout << "currentLogic: " << currentLogic + ceil(hit8[1]/10) + RAM8add << endl << "RAM8cost: " << RAM8cost << endl << "RAM8used: " << RAM8used + hit8[0] << endl << "hit8: " << hit8[0] << endl << endl;
 		final.push_back(1);
 		final.push_back(RAM8used + hit8[0]);
@@ -147,12 +151,7 @@ vector<int> Solve::returnLowest(int currentLogic, int RAM8used, int RAM128used, 
 		final.push_back(RAM128used + hit128[0]);
 		final.push_back(currentLogic + ceil(float(hit128[1])/10.0) + RAM128add);
 	}
-	else if(mode != 4 && minimum == LUTcost){
-		//cout << "currentLogic: " << currentLogic + ceil(hitLUT[1]/10) + LUTRAMadd << endl << "LUTcost: " << LUTcost << endl << "LUTRAMused: " << LUTRAMused + hitLUT[0] << endl << "hitLUT: " << hitLUT[0] << endl << endl;
-		final.push_back(0);
-		final.push_back(LUTRAMused + hitLUT[0]);
-		final.push_back(currentLogic + ceil(float(hitLUT[1])/10.0) + LUTRAMadd);
-	}
+	
 	
 	hit128.clear(); hit8.clear(); hitLUT.clear();
 
@@ -308,7 +307,12 @@ vector<int> Solve::LUTRAMconfiguration(int mode, int depthExponent, int widthExp
 	return solveData;
 }
 
-
+float Solve::getArea(int circuit, int logic, int newlogic, int RAM128used, int RAM8used, int LUTRAMused){
+	//figure this area thing out
+	float area, requiredLogicTiles = newlogic + logic /*+ LUTRAMused*/;
+	area = requiredLogicTiles*(35000+40000)/2 + RAM8used*(9000 + 5*8192 + 90*sqrt(8192) + 600*2*32) + RAM128used*(9000 + 5*131072 + 90*sqrt(131072) + 600*2*128);
+	return area;
+}
 
 // if(LUTRAM_support == false)
 // 			logic_block_area = 35000;

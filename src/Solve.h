@@ -21,6 +21,8 @@ public:
 
 	vector<int> returnLowest(int currentLogic, int RAM8used, int RAM128used, int LUTRAMused, int mode, int depthExponent, int widthExponent, int Width);
 
+	float getArea(int circuit, int logic, int newlogic, int RAM128used, int RAM8used, int LUTRAMused);
+
 };
 
 
