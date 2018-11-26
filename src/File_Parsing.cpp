@@ -154,12 +154,33 @@ public:
 };
 
 int main(int argc, char * argv[]) {
-	
+
+	std::ofstream outfile;
+	vector<int> results;
+
 	Utils * ut = new Utils();
 	ut->get_configuration(argv[1], argv[2]);
 
 	Solve set;
 	set.mapCircuit(ut->getLogicalValues(), ut->getLBCount(), false, false);
+
+	for(int i=0; i< ut->getLogicalValues().size(); i++){
+		results = set.getFinalResult(i);
+		outfile.open("resultRAMS.txt", std::ios_base::app);
+		if(results[9] == 1)
+  			outfile << results[0] << " " << results[1] << " " << results[2] << " LW " << results[3] << " LD " << results[4] << " ID " << results[5] << " S " 
+  				<< results[6] << " P " << results[7] << " Type " << results[8] << " Mode ROM W " << results[10] << " D " << results[11] << "\n"; 
+  		else if(results[9] == 2)
+  			outfile << results[0] << " " << results[1] << " " << results[2] << " LW " << results[3] << " LD " << results[4] << " ID " << results[5] << " S " 
+  				<< results[6] << " P " << results[7] << " Type " << results[8] << " Mode SinglePort W " << results[10] << " D " << results[11] << "\n"; 
+  		else if(results[9] == 3)
+  			outfile << results[0] << " " << results[1] << " " << results[2] << " LW " << results[3] << " LD " << results[4] << " ID " << results[5] << " S " 
+  				<< results[6] << " P " << results[7] << " Type " << results[8] << " Mode SimpleDualPort W " << results[10] << " D " << results[11] << "\n"; 
+  		else if(results[9] == 4)
+  			outfile << results[0] << " " << results[1] << " " << results[2] << " LW " << results[3] << " LD " << results[4] << " ID " << results[5] << " S " 
+  				<< results[6] << " P " << results[7] << " Type " << results[8] << " Mode TrueDualPort W " << results[10] << " D " << results[11] << "\n"; 
+  		outfile.close();
+	}
 	
 	//cout << argv[1] << " " << argv[2];
 

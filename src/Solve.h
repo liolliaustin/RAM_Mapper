@@ -8,10 +8,14 @@
 using namespace std;
 
 class Solve{
+private:
+	vector<vector<int> > finalResult;
 public:
 	int geometricAverage();
 
 	void areaModel();
+
+	vector<int> getFinalResult(int i){return finalResult[i];}
 
 	void mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockCount, bool LUTRAM_support, bool MTJ);
 
