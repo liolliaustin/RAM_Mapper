@@ -71,5 +71,5 @@ Circuit   Type 1    Type 2    Type 3    Blocks    Tiles     Area
 
 Geometric Average Area: 2.23859e+08
 
-CPU Time  = 0.034596s
+CPU Time  = 0.032139s
 

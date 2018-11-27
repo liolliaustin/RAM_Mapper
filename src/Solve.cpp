@@ -7,7 +7,7 @@
 using namespace std;
 
 
-void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockCount, bool LUTRAM_support, bool MTJ){
+void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockCount){
 	vector<vector<int> > finalResult;
 	vector<int> RAM_map;
 	float logic_block_area, RAM_area, totalArea, areaSum;
@@ -420,6 +420,43 @@ float Solve::getArea(int circuit, int logic, int newlogic, int RAM128used, int R
 	float area, requiredLogicTiles = newlogic + logic + LUTRAMused;
 	area = requiredLogicTiles*(35000+40000)/2 + RAM8used*(9000 + 5*8192 + 90*sqrt(8192) + 600*2*32) + RAM128used*(9000 + 5*131072 + 90*sqrt(131072) + 600*2*128);
 	return area;
+}
+
+void Solve::areaModel(vector<vector<int> > circuitDefs, vector<int> logicBlockCount, int BlockRAMsizeExponent, bool LUTRAM_support){
+	int circuit = circuitDefs[0][0], logic = logicBlockCount[0], RAM_ID, Mode, Depth, Width;
+	int BRAMsize = pow(2.0, float(BlockRAMsizeExponent));
+	int maxWidthExponent = BlockRAMsizeExponent/2;
+
+	for(int i=0; i<circuitDefs.size(); i++){
+		if(circuit != circuitDefs[i][0]){
+			circuit = circuitDefs[i][0];
+			logic = logicBlockCount[circuit];
+		}
+		RAM_ID = circuitDefs[i][1];
+		Mode = circuitDefs[i][2];
+		Depth = circuitDefs[i][3];
+		Width = circuitDefs[i][4];
+		int widthExponent = ceil(log2(Width));
+		int depthExponent = ceil(log2(Depth));
+
+	}
+	
+	cout << maxWidthExponent << endl;
+}
+
+vector<int> Solve::returnAmount(int logic, int Mode, int BlockRAMsizeExponent, int maxWidthExponent, int widthExponent, int depthExponent){
+	int hit=0;
+	if(depthExponent + widthExponent <= BlockRAMsizeExponent && widthExponent <= maxWidthExponent && mode < 4 || depthExponent + widthExponent <= BlockRAMsizeExponent && widthExponent < (maxWidthExponent-1) && mode == 4){
+		hit = 1;
+	}
+	else if(depthExponent <= BlockRAMsizeExponent && depthExponent >= (BlockRAMsizeExponent - maxWidthExponent) && mode <4){
+		hit = widthExponent - maxWidthExponent;
+	}
+	else if(depthExponent <= BlockRAMsizeExponent && depthExponent >= (BlockRAMsizeExponent - maxWidthExponent + 1) && mode==4){
+		hit = widthExponent - maxWidthExponent + 1;
+	}
+
+	
 }
 
 // if(LUTRAM_support == false)

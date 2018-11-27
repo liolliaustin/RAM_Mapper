@@ -16,7 +16,7 @@ public:
 
 	vector<int> getFinalResult(int i){return finalResult[i];}
 
-	void mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockCount, bool LUTRAM_support, bool MTJ);
+	void mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockCount);
 
 	vector<int> RAM8kconfiguration(int mode, int depthExponent, int widthExponent, int Width);
 	vector<int> RAM128kconfiguration(int mode, int depthExponent, int widthExponent, int Width);
@@ -25,6 +25,8 @@ public:
 	vector<int> returnLowest(int currentLogic, int RAM8used, int RAM128used, int LUTRAMused, int mode, int depthExponent, int widthExponent, int Width);
 
 	float getArea(int circuit, int logic, int newlogic, int RAM128used, int RAM8used, int LUTRAMused);
+	void areaModel(vector<vector<int> > circuitDefs, vector<int> logicBlockCount, int BlockRAMsizeExponent, bool LUTRAM_support);
+	vector<int> returnAmount(int logic, int Mode, int BlockRAMsizeExponent, int maxWidthExponent, int widthExponent, int depthExponent);
 
 };
 
