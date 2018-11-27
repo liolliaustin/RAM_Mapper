@@ -18,8 +18,8 @@ void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockC
 	
 	for(int i=0; i<circuitDefs.size(); i++){
 		if(circuit != circuitDefs[i][0]){
-			totalArea = getArea(circuit, logic, newlogic - logic, RAM128used, RAM8used, LUTRAMused);
-			areaVector.push_back(totalArea/100000000);
+			// totalArea = getArea(circuit, logic, newlogic - logic, RAM128used, RAM8used, LUTRAMused);
+			// areaVector.push_back(totalArea/100000000);
 			cout << "Circuit " << circuit << " original size: " << logic << endl << "New logic: " << newlogic << endl << "128k: " << RAM128used << endl << "8k: " << RAM8used << endl << "LUTRAM: " << LUTRAMused <<  endl;
 			cout << "Total Area: " << totalArea << endl << endl;
 			newlogic = logicBlockCount[circuit]; 
@@ -102,17 +102,17 @@ void Solve::mapCircuit(vector<vector<int> > circuitDefs, vector<int> logicBlockC
 		resultVector.clear();
 
 		if(i == circuitDefs.size()-1){
-			totalArea = getArea(circuit, logic, newlogic - logic, RAM128used, RAM8used, LUTRAMused);
-			areaVector.push_back(totalArea/100000000);
+			// totalArea = getArea(circuit, logic, newlogic - logic, RAM128used, RAM8used, LUTRAMused);
+			// areaVector.push_back(totalArea/100000000);
 			cout << "Circuit " << circuit << " original size: " << logic << endl << "New logic: " << newlogic << endl << "128k: " << RAM128used << endl << "8k: " << RAM8used << endl << "LUTRAM: " << LUTRAMused << endl << endl;
-			cout << "Total Area: " << totalArea << endl << endl;
+			// cout << "Total Area: " << totalArea << endl << endl;
 
-			for(int j=0; j<areaVector.size(); j++){
-				areaSum += areaVector[j];
-			}
-			areaSum /= areaVector.size();
-			areaSum *= 100000000;
-			cout << "Final Area: " << areaSum << endl;
+			// for(int j=0; j<areaVector.size(); j++){
+			// 	areaSum += areaVector[j];
+			// }
+			// areaSum /= areaVector.size();
+			// areaSum *= 100000000;
+			// cout << "Final Area: " << areaSum << endl;
 		}
 
 
@@ -207,14 +207,32 @@ vector<int> Solve::RAM8kconfiguration(int mode, int depthExponent, int widthExpo
 	int depthHit=1, widthHit=1, hit = 0, widthSize=0, extraLogic=0, RAM8width, RAM8depth;
 	if(depthExponent + widthExponent <= 13 && widthExponent <= 5 && mode < 4 || depthExponent + widthExponent <= 13 && widthExponent <= 4 && mode == 4){
 		hit = 1;
-		RAM8width = pow(2,widthExponent);
-		RAM8depth = pow(2,depthExponent);
+		if(widthExponent == 5 && mode < 4 || widthExponent == 4 && mode ==4 || depthExponent < 8 && mode < 4 || depthExponent < 9 && mode == 4){
+			RAM8width = pow(2.0,float(widthExponent));
+			RAM8depth = pow(2.0,float(13-widthExponent));
+		}
+		else if(widthExponent < 5 && depthExponent >= 8 && mode < 4 || widthExponent < 4 && depthExponent >= 9 && mode == 4){
+			RAM8width = pow(2.0,float(13-depthExponent));
+			RAM8depth = pow(2.0,float(depthExponent));
+		}
+		else{
+			if(mode < 4){
+				RAM8width = 32;
+				RAM8depth = 256;
+			}
+			else{
+				RAM8width = 16;
+				RAM8depth = 512;
+			}
+			
+		}
+		
 	}
 	else if(depthExponent <= 13 && depthExponent >= 8 && mode < 4 || depthExponent <= 13 && depthExponent >= 9 && mode == 4){
 		hit = ceil(float(Width)/float(pow(2,(13-depthExponent))));
 		widthHit = hit;
-		RAM8width = pow(2,(13-depthExponent));
-		RAM8depth = pow(2,depthExponent);
+		RAM8width = pow(2.0,float(13-depthExponent));
+		RAM8depth = pow(2,float(depthExponent));
 	}
 	else if(depthExponent < 8 && mode < 4 || depthExponent < 9 && mode == 4){
 		if(mode < 4){
@@ -232,15 +250,15 @@ vector<int> Solve::RAM8kconfiguration(int mode, int depthExponent, int widthExpo
 	}
 	else if(depthExponent > 13){
 		if(widthExponent <= 5 && mode < 4 || widthExponent<=4 && mode == 4){
-			hit = pow(2,(depthExponent - (13 - widthExponent)));
+			hit = pow(2.0,float((depthExponent - (13 - widthExponent))));
 			depthHit = hit;
-			RAM8width = pow(2,widthExponent);
-			RAM8depth = pow(2, 13 - widthExponent);
+			RAM8width = pow(2.0,float(widthExponent));
+			RAM8depth = pow(2.0, float(13 - widthExponent));
 		}
 			
 		else if(widthExponent > 5 && mode < 4 || widthExponent > 4 && mode == 4){
-			depthHit = pow(2,(depthExponent - 13));
-			widthHit = pow(2,widthExponent);
+			depthHit = pow(2.0,float(depthExponent - 13));
+			widthHit = pow(2.0,float(widthExponent));
 			if(depthHit > 16)
 				hit = 99;
 			else
@@ -268,13 +286,16 @@ vector<int> Solve::RAM8kconfiguration(int mode, int depthExponent, int widthExpo
 
 		//multiplexers
 		if(depthHit <=4)
-			extraLogic += 1*pow(2,widthExponent);
+			extraLogic += 1*pow(2.0,float(widthExponent));
 		else if(depthHit <= 8)
-			extraLogic += 3*pow(2,widthExponent);
+			extraLogic += 3*pow(2.0,float(widthExponent));
 		else if(depthHit <=16)
-			extraLogic += 5*pow(2,widthExponent);
+			extraLogic += 5*pow(2.0,float(widthExponent));
 		else
-			extraLogic += 99*pow(2,widthExponent);
+			extraLogic += 99*pow(2.0,float(widthExponent));
+
+		if(mode == 4)
+			extraLogic *=2;
 
 	}
 
@@ -293,14 +314,31 @@ vector<int> Solve::RAM128kconfiguration(int mode, int depthExponent, int widthEx
 	int depthHit=1, widthHit=1, hit = 0, widthSize=0, extraLogic=0, RAM128width=0, RAM128depth=0;
 	if(depthExponent + widthExponent <= 17 && widthExponent <= 7 && mode < 4 || depthExponent + widthExponent <= 17 && widthExponent <= 6 && mode == 4){
 		hit = 1;
-		RAM128width = pow(2,widthExponent);
-		RAM128depth = pow(2, depthExponent);
+		if(widthExponent == 7 && mode < 4 || widthExponent == 6 && mode ==4 || depthExponent < 10 && mode < 4 || depthExponent < 11 && mode == 4){
+			RAM128width = pow(2.0,float(widthExponent));
+			RAM128depth = pow(2.0,float(17-widthExponent));
+		}
+		else if(widthExponent < 7 && depthExponent >= 10 && mode < 4 || widthExponent < 6 && depthExponent >= 11 && mode == 4){
+			RAM128width = pow(2.0,float(17-depthExponent));
+			RAM128depth = pow(2.0,float(depthExponent));
+		}
+		else{
+			if(mode < 4){
+				RAM128width = 128;
+				RAM128depth = 1024;
+			}
+			else{
+				RAM128width = 64;
+				RAM128depth = 2048;
+			}
+			
+		}
 	}
 	else if(depthExponent <= 14 && depthExponent >= 10 && mode < 4 || depthExponent <= 14 && depthExponent >= 11 && mode == 4){
-		hit = ceil(float(Width)/float(pow(2,(17-depthExponent))));
+		hit = ceil(float(Width)/float(pow(2.0,float(17-depthExponent))));
 		widthHit = hit;
-		RAM128width = pow(2,(17-depthExponent));
-		RAM128depth = pow(2, depthExponent);
+		RAM128width = pow(2.0,float(17-depthExponent));
+		RAM128depth = pow(2.0, float(depthExponent));
 	}
 	else if(depthExponent < 10 && mode < 4 || depthExponent < 11 && mode == 4){
 		if(mode < 4){
@@ -344,7 +382,7 @@ vector<int> Solve::LUTRAMconfiguration(int mode, int depthExponent, int widthExp
 	}
 
 	else{
-		depthHit = pow(2,depthExponent - 6);
+		depthHit = pow(2.0, float(depthExponent - 6));
 		widthHit = ceil(float(Width)/10.0);
 		hit = depthHit*widthHit;
 		LUTwidth = 10;
@@ -357,13 +395,13 @@ vector<int> Solve::LUTRAMconfiguration(int mode, int depthExponent, int widthExp
 
 		//multiplexers
 		if(depthHit <=4)
-			extraLogic += 1*pow(2,widthExponent);
+			extraLogic += 1*pow(2.0, float(widthExponent));
 		else if(depthHit <= 8)
-			extraLogic += 3*pow(2,widthExponent);
+			extraLogic += 3*pow(2.0,float(widthExponent));
 		else if(depthHit <=16)
-			extraLogic += 5*pow(2,widthExponent);
+			extraLogic += 5*pow(2.0,float(widthExponent));
 		else
-			extraLogic = 99*pow(2,widthExponent); 
+			extraLogic = 99*pow(2.0,float(widthExponent)); 
 	}
 
 	solveData.push_back(hit); 
