@@ -159,19 +159,9 @@ vector<int> Solve::returnLowest(int currentLogic, int RAM8used, int RAM128used, 
 
 	minimum = min(min(RAM8cost, RAM128cost), LUTcost);
 	//cout << "Available128: " << RAM128available << endl << RAM128cost << endl;
-	if(mode != 4 && minimum == LUTcost){
-		//cout << "currentLogic: " << currentLogic + ceil(hitLUT[1]/10) + LUTRAMadd << endl << "LUTcost: " << LUTcost << endl << "LUTRAMused: " << LUTRAMused + hitLUT[0] << endl << "hitLUT: " << hitLUT[0] << endl << endl;
-		final.push_back(1);
-		final.push_back(LUTRAMused + hitLUT[0]);
-		final.push_back(currentLogic + ceil(float(hitLUT[1])/10.0) + LUTRAMadd);
-		final.push_back(hitLUT[1]);
-		final.push_back(hitLUT[2]);
-		final.push_back(hitLUT[3]);
-		final.push_back(hitLUT[4]);
-		final.push_back(hitLUT[5]);
-	}
+	
 
-	else if(minimum == RAM8cost){
+	if(minimum == RAM8cost){
 		//cout << "currentLogic: " << currentLogic + ceil(hit8[1]/10) + RAM8add << endl << "RAM8cost: " << RAM8cost << endl << "RAM8used: " << RAM8used + hit8[0] << endl << "hit8: " << hit8[0] << endl << endl;
 		final.push_back(2);
 		final.push_back(RAM8used + hit8[0]);
@@ -192,6 +182,18 @@ vector<int> Solve::returnLowest(int currentLogic, int RAM8used, int RAM128used, 
 		final.push_back(hit128[3]);
 		final.push_back(hit128[4]);
 		final.push_back(hit128[5]);
+	}
+
+	else if(mode != 4 && minimum == LUTcost){
+		//cout << "currentLogic: " << currentLogic + ceil(hitLUT[1]/10) + LUTRAMadd << endl << "LUTcost: " << LUTcost << endl << "LUTRAMused: " << LUTRAMused + hitLUT[0] << endl << "hitLUT: " << hitLUT[0] << endl << endl;
+		final.push_back(1);
+		final.push_back(LUTRAMused + hitLUT[0]);
+		final.push_back(currentLogic + ceil(float(hitLUT[1])/10.0) + LUTRAMadd);
+		final.push_back(hitLUT[1]);
+		final.push_back(hitLUT[2]);
+		final.push_back(hitLUT[3]);
+		final.push_back(hitLUT[4]);
+		final.push_back(hitLUT[5]);
 	}
 	
 	

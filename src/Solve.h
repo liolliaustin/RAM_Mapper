@@ -4,7 +4,6 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
-#include "RAM.h"
 using namespace std;
 
 class Solve{
