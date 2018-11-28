@@ -415,47 +415,138 @@ vector<int> Solve::LUTRAMconfiguration(int mode, int depthExponent, int widthExp
 	return solveData;
 }
 
-float Solve::getArea(int circuit, int logic, int newlogic, int RAM128used, int RAM8used, int LUTRAMused){
+float Solve::getArea(int newlogic, int RAMused, int maxWidth, int bits){
 	//figure this area thing out
-	float area, requiredLogicTiles = newlogic + logic + LUTRAMused;
-	area = requiredLogicTiles*(35000+40000)/2 + RAM8used*(9000 + 5*8192 + 90*sqrt(8192) + 600*2*32) + RAM128used*(9000 + 5*131072 + 90*sqrt(131072) + 600*2*128);
+	float area;
+
+	area = newlogic*35000/2 + RAMused*(9000 + 5*bits + 90*sqrt(bits) + 600*2*maxWidth);
+
 	return area;
 }
 
 void Solve::areaModel(vector<vector<int> > circuitDefs, vector<int> logicBlockCount, int BlockRAMsizeExponent, bool LUTRAM_support){
-	int circuit = circuitDefs[0][0], logic = logicBlockCount[0], RAM_ID, Mode, Depth, Width;
+	int circuit = circuitDefs[0][0], logic = logicBlockCount[0], newLogic = logicBlockCount[0], RAM_ID, Mode, Depth, Width, RAMused=0;
+	int LBpRB = 5;
 	int BRAMsize = pow(2.0, float(BlockRAMsizeExponent));
-	int maxWidthExponent = BlockRAMsizeExponent/2;
+	int maxWidthExponent = BlockRAMsizeExponent/2 + 2;
+	float areaCircuit, areaResult;
+	vector<int> ramResult;
+	vector<float> areaVector;
 
 	for(int i=0; i<circuitDefs.size(); i++){
+		// cout << newLogic << endl;
 		if(circuit != circuitDefs[i][0]){
+			areaCircuit = getArea(newLogic, RAMused, pow(2.0, float(maxWidthExponent)), BRAMsize);
+			areaVector.push_back(areaCircuit/100000000.0);
+			cout << "Circuit: " << circuit << endl << "RAMs Used: " << RAMused << endl << "Previous Logic: " << logic << endl << "newLogic: " << newLogic << endl << endl;
 			circuit = circuitDefs[i][0];
 			logic = logicBlockCount[circuit];
+			newLogic = logicBlockCount[circuit];
+			RAMused = 0;
 		}
+
 		RAM_ID = circuitDefs[i][1];
 		Mode = circuitDefs[i][2];
 		Depth = circuitDefs[i][3];
 		Width = circuitDefs[i][4];
 		int widthExponent = ceil(log2(Width));
 		int depthExponent = ceil(log2(Depth));
+		
+		ramResult = returnAmount(newLogic, Mode, BlockRAMsizeExponent, maxWidthExponent, widthExponent, depthExponent, RAMused, LBpRB);
+
+		RAMused = ramResult[0];
+		newLogic += ramResult[1];
+
+		// cout << "RAMs Used: " << RAMused << endl << "newLogic: " << newLogic << endl;
+
+		ramResult.clear();
+
+		if(i == circuitDefs.size()-1){
+			cout << "Circuit: " << circuit << endl << "RAMs Used: " << RAMused << endl << "Previous Logic: " << logic << endl << "newLogic: " << newLogic << endl;
+			areaCircuit = getArea(newLogic, RAMused, pow(2.0, float(maxWidthExponent)), BRAMsize);
+			areaVector.push_back(areaCircuit);
+		}
 
 	}
 	
-	cout << maxWidthExponent << endl;
+	for(int i=0; i<areaVector.size(); i++)
+		areaResult += areaVector[i];
+	areaResult /= areaVector.size();
+	areaResult *= 100000000.0;
+
+	cout << "Final Area: " << areaResult << endl;
+	//cout << maxWidthExponent << endl;
 }
 
-vector<int> Solve::returnAmount(int logic, int Mode, int BlockRAMsizeExponent, int maxWidthExponent, int widthExponent, int depthExponent){
-	int hit=0;
+vector<int> Solve::returnAmount(int newLogic, int mode, int BlockRAMsizeExponent, int maxWidthExponent, int widthExponent, int depthExponent, int RAMused, int LBpRB){
+	vector<int> returnVector;
+	int available = newLogic/LBpRB - RAMused, extraLogic = 0, depthHit=0, newvals =0;
+
+
+	
 	if(depthExponent + widthExponent <= BlockRAMsizeExponent && widthExponent <= maxWidthExponent && mode < 4 || depthExponent + widthExponent <= BlockRAMsizeExponent && widthExponent < (maxWidthExponent-1) && mode == 4){
-		hit = 1;
+		RAMused += 1;
 	}
 	else if(depthExponent <= BlockRAMsizeExponent && depthExponent >= (BlockRAMsizeExponent - maxWidthExponent) && mode <4){
-		hit = widthExponent - maxWidthExponent;
+		RAMused += ceil(pow(2.0, float(widthExponent - maxWidthExponent)));
 	}
 	else if(depthExponent <= BlockRAMsizeExponent && depthExponent >= (BlockRAMsizeExponent - maxWidthExponent + 1) && mode==4){
-		hit = widthExponent - maxWidthExponent + 1;
+		RAMused += ceil(pow(2.0, float(widthExponent - maxWidthExponent + 1)));
+	}
+	else if(depthExponent < (BlockRAMsizeExponent - maxWidthExponent) && mode < 4){
+		if(widthExponent <= maxWidthExponent)
+			RAMused += 1;
+		else
+			RAMused += ceil(pow(2.0, float(widthExponent - maxWidthExponent)));
 	}
 
+	else if(depthExponent < (BlockRAMsizeExponent - maxWidthExponent -1) && mode == 4){
+		if(widthExponent <= (maxWidthExponent -1))
+			RAMused += 1;
+		else
+			RAMused += ceil(pow(2.0, float(widthExponent - maxWidthExponent + 1)));
+	}
+
+	else if(depthExponent > BlockRAMsizeExponent){
+		if(widthExponent <= maxWidthExponent && mode < 4 || widthExponent <= (maxWidthExponent -1) && mode == 4)
+			RAMused += ceil(pow(2.0, float(depthExponent - BlockRAMsizeExponent)));
+		
+		else{
+			if(mode < 4)
+				RAMused += ceil(pow(2.0, float(depthExponent - BlockRAMsizeExponent)))*ceil(pow(2.0, float(widthExponent - maxWidthExponent)));
+			else
+				RAMused += ceil(pow(2.0, float(depthExponent - BlockRAMsizeExponent)))*ceil(pow(2.0, float(widthExponent - maxWidthExponent + 1)));
+		}
+		
+		depthHit = ceil(pow(2.0, float(depthExponent - BlockRAMsizeExponent)));
+
+		if(depthHit == 2)
+			extraLogic += 1;
+		else
+			extraLogic += depthHit;
+
+		//multiplexers
+		if(depthHit <=4)
+			extraLogic += 1*pow(2.0, float(widthExponent));
+		else if(depthHit <= 8)
+			extraLogic += 3*pow(2.0,float(widthExponent));
+		else if(depthHit <=16)
+			extraLogic += 5*pow(2.0,float(widthExponent));
+		else
+			extraLogic = 99*pow(2.0,float(widthExponent));
+
+	}
+
+	if(available <=0){
+		newvals += LBpRB*RAMused;
+	}
+	if(extraLogic != 0)
+		newvals += ceil(float(extraLogic)/10.0);
+
+	returnVector.push_back(RAMused);
+	returnVector.push_back(newvals);
+
+	return returnVector;
 	
 }
 

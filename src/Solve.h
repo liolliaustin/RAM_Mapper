@@ -24,9 +24,10 @@ public:
 
 	vector<int> returnLowest(int currentLogic, int RAM8used, int RAM128used, int LUTRAMused, int mode, int depthExponent, int widthExponent, int Width);
 
-	float getArea(int circuit, int logic, int newlogic, int RAM128used, int RAM8used, int LUTRAMused);
+	float getArea(int newlogic, int RAMused, int maxWidth, int bits);
+
 	void areaModel(vector<vector<int> > circuitDefs, vector<int> logicBlockCount, int BlockRAMsizeExponent, bool LUTRAM_support);
-	vector<int> returnAmount(int logic, int Mode, int BlockRAMsizeExponent, int maxWidthExponent, int widthExponent, int depthExponent);
+	vector<int> returnAmount(int newLogic, int Mode, int BlockRAMsizeExponent, int maxWidthExponent, int widthExponent, int depthExponent, int RAM8used, int LBpRB);
 
 };
 

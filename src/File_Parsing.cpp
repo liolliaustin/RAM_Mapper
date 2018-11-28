@@ -213,7 +213,7 @@ int main(int argc, char * argv[]) {
 
 	else if (strcmp(argv[3], "2") == 0){
 		Solve set;
-		set.areaModel(ut->getLogicalValues(), ut->getLBCount(), 9, false);
+		set.areaModel(ut->getLogicalValues(), ut->getLBCount(), 17, false);
 	}
 	
 	//cout << argv[1] << " " << argv[2];
