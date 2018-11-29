@@ -1,26 +1,27 @@
-1024 maxWidthExponent (64) Logic/RAM 10
-Final Area: 1.41906e+08
+64 10
+Final Area 1024 maxWidthExponent (64): 1.41884e+08
 
-2048 maxWidthExponent (64) Logic/RAM 10
-Final Area: 1.37547e+08
+64 10
+Final Area 2048 maxWidthExponent (64): 1.37507e+08
 
-4096 maxWidthExponent (64) Logic/RAM 10
-Final Area: 1.38119e+08
+64 10
+Final Area 4096 maxWidthExponent (64): 1.38046e+08
 
-8192 maxWidthExponent (64) Logic/RAM 10
-Final Area: 1.4411e+08
+64 10
+Final Area 8192 maxWidthExponent (64): 1.43973e+08
 
-16384 maxWidthExponent (64) Logic/RAM 10
-Final Area: 1.54104e+08
+64 10
+Final Area 16384 maxWidthExponent (64): 1.53844e+08
 
-32768 maxWidthExponent (64) Logic/RAM 10
-Final Area: 1.77314e+08
+64 10
+Final Area 32768 maxWidthExponent (64): 1.76812e+08
 
-65536 maxWidthExponent (128) Logic/RAM 10
-Final Area: 2.22685e+08
+128 10
+Final Area 65536 maxWidthExponent (128): 2.21709e+08
 
-131072 maxWidthExponent (128) Logic/RAM 10
-Final Area: 3.09013e+08
+128 10
+Final Area 131072 maxWidthExponent (128): 3.07099e+08
+
 
 
 
