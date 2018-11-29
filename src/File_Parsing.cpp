@@ -212,8 +212,26 @@ int main(int argc, char * argv[]) {
 	}
 
 	else if (strcmp(argv[3], "2") == 0){
+		bool LUTRAM_support = false, MTJ = false, multiRAM = false;
+		if (strcmp(argv[4], "false") == 0)
+			LUTRAM_support = false;
+		else if (strcmp(argv[4], "true") == 0)
+			LUTRAM_support = true;
+		if (strcmp(argv[5], "false") == 0)
+			MTJ = false;
+		else if (strcmp(argv[5], "true") == 0)
+			MTJ = true;
+		if (strcmp(argv[6], "false") == 0)
+			multiRAM = false;
+		else if (strcmp(argv[6], "true") == 0){
+			LUTRAM_support = true;
+			multiRAM = true;
+		}
 		Solve set;
-		set.areaModel(ut->getLogicalValues(), ut->getLBCount(), 17, false);
+		for(int i=10; i<18; i++){
+			cout << endl;
+			set.areaModel(ut->getLogicalValues(), ut->getLBCount(), i, LUTRAM_support, MTJ, multiRAM);
+		}
 	}
 	
 	//cout << argv[1] << " " << argv[2];

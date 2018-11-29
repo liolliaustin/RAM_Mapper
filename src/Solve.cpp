@@ -415,66 +415,211 @@ vector<int> Solve::LUTRAMconfiguration(int mode, int depthExponent, int widthExp
 	return solveData;
 }
 
-float Solve::getArea(int newlogic, int RAMused, int maxWidth, int bits){
+float Solve::getArea(int newlogic, int RAMused, int maxWidth, int bits, int RAM2used, int maxWidth2, int bits2, bool LUTRAM_support, bool MTJ){
 	//figure this area thing out
 	float area;
-
-	area = newlogic*35000/2 + RAMused*(9000 + 5*bits + 90*sqrt(bits) + 600*2*maxWidth);
+	if(LUTRAM_support == false && MTJ == false)
+		area = newlogic*35000/2 + RAMused*(9000 + 5*bits + 90*sqrt(bits) + 600*2*maxWidth) + RAM2used*(9000 + 5*bits2 + 90*sqrt(bits2) + 600*2*maxWidth2);
+	else if(LUTRAM_support == true && MTJ == false)
+		area = newlogic*(40000 + 35000)/2 + RAMused*(9000 + 5*bits + 90*sqrt(bits) + 600*2*maxWidth) + RAM2used*(9000 + 5*bits2 + 90*sqrt(bits2) + 600*2*maxWidth2);
+	else if(LUTRAM_support == false && MTJ == true)
+		area = newlogic*35000/2 + RAMused*(9000 + 1.25*bits + 90*sqrt(bits) + 600*2*maxWidth) + RAM2used*(9000 + 1.25*bits2 + 90*sqrt(bits2) + 600*2*maxWidth2);
+	else if(LUTRAM_support == true && MTJ == true)
+		area = newlogic*(40000 + 35000)/2 + RAMused*(9000 + 1.25*bits + 90*sqrt(bits) + 600*2*maxWidth) + RAM2used*(9000 + 1.25*bits2 + 90*sqrt(bits2) + 600*2*maxWidth2);;
 
 	return area;
 }
 
-void Solve::areaModel(vector<vector<int> > circuitDefs, vector<int> logicBlockCount, int BlockRAMsizeExponent, bool LUTRAM_support){
-	int circuit = circuitDefs[0][0], logic = logicBlockCount[0], newLogic = logicBlockCount[0], RAM_ID, Mode, Depth, Width, RAMused=0;
-	int LBpRB = 5;
-	int BRAMsize = pow(2.0, float(BlockRAMsizeExponent));
-	int maxWidthExponent = BlockRAMsizeExponent/2 + 2;
-	float areaCircuit, areaResult;
-	vector<int> ramResult;
-	vector<float> areaVector;
+void Solve::areaModel(vector<vector<int> > circuitDefs, vector<int> logicBlockCount, int BlockRAMsizeExponent, bool LUTRAM_support, bool MTJ, bool multiRAM){
+	float minimumArea = 10000000000000;
+	int minMaxWidth = 0, minLBpRB = 0, minMaxWidth2=0;
 
-	for(int i=0; i<circuitDefs.size(); i++){
-		// cout << newLogic << endl;
-		if(circuit != circuitDefs[i][0]){
-			areaCircuit = getArea(newLogic, RAMused, pow(2.0, float(maxWidthExponent)), BRAMsize);
-			areaVector.push_back(areaCircuit/100000000.0);
-			cout << "Circuit: " << circuit << endl << "RAMs Used: " << RAMused << endl << "Previous Logic: " << logic << endl << "newLogic: " << newLogic << endl << endl;
-			circuit = circuitDefs[i][0];
-			logic = logicBlockCount[circuit];
-			newLogic = logicBlockCount[circuit];
-			RAMused = 0;
+	if(multiRAM == false){
+		for(int j = -2; j < 3; j++){
+			for(int k = 10; k<=50; k+=10){
+				int circuit = circuitDefs[0][0], logic = logicBlockCount[0], newLogic = logicBlockCount[0], RAM_ID, Mode, Depth, Width, RAMused=0;
+				int LBpRB = k, LUTRAMused=0;
+				int BRAMsize = pow(2.0, float(BlockRAMsizeExponent));
+				int maxWidthExponent = BlockRAMsizeExponent/2+j;
+				float areaCircuit=0, areaResult=0;
+
+				vector<int> ramResult, LUTResult;
+				vector<float> areaVector;
+
+				for(int i=0; i<circuitDefs.size(); i++){
+					// cout << newLogic << endl;
+					if(circuit != circuitDefs[i][0]){
+						
+						areaCircuit = getArea(newLogic, RAMused, pow(2.0, float(maxWidthExponent)), BRAMsize, 0, 0, 0, LUTRAM_support, MTJ);
+						areaVector.push_back(areaCircuit/100000000.0);
+						//cout << "Circuit: " << circuit << endl << "RAMs Used: " << RAMused << endl << "Previous Logic: " << logic << endl << "newLogic: " << newLogic << endl << "Area: " << areaCircuit << endl << endl;
+						circuit = circuitDefs[i][0];
+						logic = logicBlockCount[circuit];
+						newLogic = logicBlockCount[circuit];
+						RAMused = 0;
+					}
+
+					RAM_ID = circuitDefs[i][1];
+					Mode = circuitDefs[i][2];
+					Depth = circuitDefs[i][3];
+					Width = circuitDefs[i][4];
+					int widthExponent = ceil(log2(Width));
+					int depthExponent = ceil(log2(Depth));
+
+					if(LUTRAM_support == false){
+					
+						ramResult = returnAmount(newLogic, Mode, BlockRAMsizeExponent, maxWidthExponent, widthExponent, depthExponent, RAMused, LBpRB);
+
+						RAMused = ramResult[0];
+						newLogic += ramResult[1];
+
+						//cout << "RAMs Used: " << RAMused << endl << "newLogic: " << newLogic << endl;
+
+						ramResult.clear();
+					}
+					else{
+						if(Mode < 4)
+							LUTResult = LUTRAMconfiguration(Mode, depthExponent, widthExponent, Width);
+						ramResult = returnAmount(newLogic, Mode, BlockRAMsizeExponent, maxWidthExponent, widthExponent, depthExponent, RAMused, LBpRB);
+
+						if(Mode < 4 && LUTResult[1] == 0)
+							LUTRAMused += LUTResult[0];
+						else if(ramResult[1] == 0)
+							RAMused = ramResult[0];
+						else if(Mode < 4 && LUTResult[1] < ramResult[1]){
+							newLogic += ceil(float(LUTResult[1])/10.0);
+							LUTRAMused += LUTResult[0];
+						}
+						else{
+							RAMused = ramResult[0];
+							newLogic += ramResult[1];
+						}
+
+					}
+
+					if(i == circuitDefs.size()-1){
+						//cout << "Circuit: " << circuit << endl << "RAMs Used: " << RAMused << endl << "Previous Logic: " << logic << endl << "newLogic: " << newLogic << endl;
+						areaCircuit = getArea(newLogic, RAMused, pow(2.0, float(maxWidthExponent)), 0, 0, 0, BRAMsize, LUTRAM_support, MTJ);
+						areaVector.push_back(areaCircuit/100000000.0);
+					}
+
+				}
+				
+				for(int i=0; i<areaVector.size(); i++){
+					//cout << areaVector[i] << endl;
+					areaResult += areaVector[i];
+				}
+				areaResult /= areaVector.size();
+				areaResult *= 100000000.0;
+
+				if(areaResult < minimumArea){
+					minMaxWidth = pow(2.0, float(maxWidthExponent));
+					minimumArea = areaResult;
+					minLBpRB = LBpRB;
+				}
+				
+				areaVector.clear();
+			}
 		}
+		cout << minMaxWidth << " " << minLBpRB << endl;
+		cout << "Final Area " << pow(2.0, float(BlockRAMsizeExponent)) << " maxWidthExponent (" << minMaxWidth << "): " << minimumArea << endl;
+	}
+	else{
+		int minRAM2;
+		for(int RAM2exponent = 10; RAM2exponent <= 17; RAM2exponent++){
+			for(int j = -2; j < 3; j++){
+				for(int k = 10; k<=50; k+=10){
+					int circuit = circuitDefs[0][0], logic = logicBlockCount[0], newLogic = logicBlockCount[0], RAM_ID, Mode, Depth, Width, RAMused=0, RAM2used = 0;
+					int LBpRB = k, LUTRAMused=0;
+					int BRAMsize = pow(2.0, float(BlockRAMsizeExponent));
+					int BRAMsize2 = pow(2.0, float(RAM2exponent));
+					int maxWidthExponent = BlockRAMsizeExponent/2+j;
+					int maxWidthExponent2 = RAM2exponent/2+j;
+					float areaCircuit=0, areaResult=0;
 
-		RAM_ID = circuitDefs[i][1];
-		Mode = circuitDefs[i][2];
-		Depth = circuitDefs[i][3];
-		Width = circuitDefs[i][4];
-		int widthExponent = ceil(log2(Width));
-		int depthExponent = ceil(log2(Depth));
-		
-		ramResult = returnAmount(newLogic, Mode, BlockRAMsizeExponent, maxWidthExponent, widthExponent, depthExponent, RAMused, LBpRB);
+					vector<int> ramResult, LUTResult, ram2Result;
+					vector<float> areaVector;
 
-		RAMused = ramResult[0];
-		newLogic += ramResult[1];
+					for(int i=0; i<circuitDefs.size(); i++){
+						// cout << newLogic << endl;
+						if(circuit != circuitDefs[i][0]){
+							
+							areaCircuit = getArea(newLogic, RAMused, pow(2.0, float(maxWidthExponent)), BRAMsize, RAM2used, pow(2.0, float(maxWidthExponent2)), BRAMsize2, LUTRAM_support, MTJ);
+							areaVector.push_back(areaCircuit/100000000.0);
+							//cout << "Circuit: " << circuit << endl << "RAMs Used: " << RAMused << endl << "Previous Logic: " << logic << endl << "newLogic: " << newLogic << endl << "Area: " << areaCircuit << endl << endl;
+							circuit = circuitDefs[i][0];
+							logic = logicBlockCount[circuit];
+							newLogic = logicBlockCount[circuit];
+							RAMused = 0;
+							RAM2used = 0;
+						}
 
-		// cout << "RAMs Used: " << RAMused << endl << "newLogic: " << newLogic << endl;
+						RAM_ID = circuitDefs[i][1];
+						Mode = circuitDefs[i][2];
+						Depth = circuitDefs[i][3];
+						Width = circuitDefs[i][4];
+						int widthExponent = ceil(log2(Width));
+						int depthExponent = ceil(log2(Depth));
 
-		ramResult.clear();
+						if(Mode < 4)
+							LUTResult = LUTRAMconfiguration(Mode, depthExponent, widthExponent, Width);
+						ramResult = returnAmount(newLogic, Mode, BlockRAMsizeExponent, maxWidthExponent, widthExponent, depthExponent, RAMused, LBpRB);
+						ram2Result = returnAmount(newLogic, Mode, RAM2exponent, maxWidthExponent2, widthExponent, depthExponent, RAM2used, LBpRB);
 
-		if(i == circuitDefs.size()-1){
-			cout << "Circuit: " << circuit << endl << "RAMs Used: " << RAMused << endl << "Previous Logic: " << logic << endl << "newLogic: " << newLogic << endl;
-			areaCircuit = getArea(newLogic, RAMused, pow(2.0, float(maxWidthExponent)), BRAMsize);
-			areaVector.push_back(areaCircuit);
+						if(Mode < 4 && LUTResult[1] == 0)
+							LUTRAMused += LUTResult[0];
+						else if(ramResult[1] == 0)
+							RAMused = ramResult[0];
+						else if(ram2Result[1] == 0)
+							RAM2used = ram2Result[0];
+						else if(Mode < 4 && LUTResult[1] < ramResult[1] && LUTResult[1] < ram2Result[1]){
+							newLogic += ceil(float(LUTResult[1])/10.0);
+							LUTRAMused += LUTResult[0];
+						}
+						else if(ramResult[0] - RAMused < ram2Result[0] - RAM2used){
+							RAMused = ramResult[0];
+							newLogic += ramResult[1];
+						}
+						else{
+							RAM2used = ram2Result[0];
+							newLogic += ram2Result[1];
+						}
+
+						
+
+						if(i == circuitDefs.size()-1){
+							//cout << "Circuit: " << circuit << endl << "RAMs Used: " << RAMused << endl << "Previous Logic: " << logic << endl << "newLogic: " << newLogic << endl;
+							areaCircuit = getArea(newLogic, RAMused, pow(2.0, float(maxWidthExponent)), BRAMsize, RAM2used, pow(2.0, float(maxWidthExponent2)), BRAMsize2, LUTRAM_support, MTJ);
+							areaVector.push_back(areaCircuit/100000000.0);
+						}
+
+					}
+					
+					for(int i=0; i<areaVector.size(); i++){
+						//cout << areaVector[i] << endl;
+						areaResult += areaVector[i];
+					}
+					areaResult /= areaVector.size();
+					areaResult *= 100000000.0;
+
+					if(areaResult < minimumArea){
+						minMaxWidth = pow(2.0, float(maxWidthExponent));
+						minMaxWidth2 = pow(2.0, float(maxWidthExponent2));
+						minRAM2 = pow(2.0, float(RAM2exponent));
+						minimumArea = areaResult;
+						minLBpRB = LBpRB;
+					}
+					
+					areaVector.clear();
+				}
+			}
 		}
+		cout << "Max width RAM 1: " << minMaxWidth << endl << "Max width RAM 2: " << minMaxWidth2 << endl << minLBpRB << endl;
+		cout << "Final Area " << pow(2.0, float(BlockRAMsizeExponent)) << " maxWidthExponent (" << minMaxWidth << ") and "; 
+		cout << minRAM2 << " maxWidthExponent (" << minMaxWidth2 << "): " << minimumArea << endl;
 
 	}
 	
-	for(int i=0; i<areaVector.size(); i++)
-		areaResult += areaVector[i];
-	areaResult /= areaVector.size();
-	areaResult *= 100000000.0;
-
-	cout << "Final Area: " << areaResult << endl;
 	//cout << maxWidthExponent << endl;
 }
 
@@ -482,8 +627,6 @@ vector<int> Solve::returnAmount(int newLogic, int mode, int BlockRAMsizeExponent
 	vector<int> returnVector;
 	int available = newLogic/LBpRB - RAMused, extraLogic = 0, depthHit=0, newvals =0;
 
-
-	
 	if(depthExponent + widthExponent <= BlockRAMsizeExponent && widthExponent <= maxWidthExponent && mode < 4 || depthExponent + widthExponent <= BlockRAMsizeExponent && widthExponent < (maxWidthExponent-1) && mode == 4){
 		RAMused += 1;
 	}
