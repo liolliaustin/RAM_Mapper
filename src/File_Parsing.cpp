@@ -142,15 +142,6 @@ public:
 				Count2++;
 
 			}
-
-			// for(int i=0; i<logicalValues.size(); i++){
-			// 	for(int j=0; j<logicalValues[i].size(); j++){
-			// 		cout << logicalValues[i][j] << " ";
-			// 	}
-			// 	cout << endl;
-			// }
-
-			//cout << endl <<"SDPcount = " << SDPcount << endl << "TrueDualPortcount = " << tdpCount << endl << "SinPcount = " << SinPcount << endl << "ROMs = " << ROMCount << endl;
 			
 			fclose(fp2);
 			this -> logicalValues = logicalValues;
@@ -194,7 +185,7 @@ int main(int argc, char * argv[]) {
 
 		for(int i=0; i< ut->getLogicalValues().size(); i++){
 			results = set.getFinalResult(i);
-			outfile.open("resultRAMS.txt", std::ios_base::app);
+			outfile.open("resultRAMS2.txt", std::ios_base::app);
 			if(results[9] == 1)
 	  			outfile << results[0] << " " << results[1] << " " << results[2] << " LW " << results[3] << " LD " << results[4] << " ID " << results[5] << " S " 
 	  				<< results[6] << " P " << results[7] << " Type " << results[8] << " Mode ROM W " << results[10] << " D " << results[11] << "\n"; 
@@ -224,7 +215,6 @@ int main(int argc, char * argv[]) {
 		if (strcmp(argv[6], "false") == 0)
 			multiRAM = false;
 		else if (strcmp(argv[6], "true") == 0){
-			LUTRAM_support = true;
 			multiRAM = true;
 		}
 		Solve set;
@@ -232,9 +222,12 @@ int main(int argc, char * argv[]) {
 			cout << endl;
 			set.areaModel(ut->getLogicalValues(), ut->getLBCount(), i, LUTRAM_support, MTJ, multiRAM);
 		}
+		double wall1 = get_wall_time();
+	    double cpu1  = get_cpu_time();
+
+	    cout << "Wall Time = " << wall1 - wall0 << endl;
+	    cout << "CPU Time  = " << cpu1  - cpu0  << endl;
 	}
-	
-	//cout << argv[1] << " " << argv[2];
 
 	return (0);
 	
